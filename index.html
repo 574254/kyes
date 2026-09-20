@@ -70,9 +70,9 @@
         
         /* 針對禮卷圖示套用濾鏡，讓紫色更顯眼，並放大圖案 */
         .box.theme-ticket .emoji {
-             filter: hue-rotate(260deg) saturate(300%) brightness(1.1); /* 調整濾鏡以獲得更飽和的紫色 */
-             display: inline-block; /* 必須設為 inline-block 或 block 才能使用 transform */
-             transform: scale(1.4); /* 放大圖案 1.4 倍 */
+             filter: hue-rotate(260deg) saturate(300%) brightness(1.1);
+             display: inline-block; 
+             transform: scale(1.4); 
         }
         
         .box:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
@@ -81,7 +81,6 @@
             cursor: default;
             transform: none;
             box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
-            /* 移除邊框 */
         }
 
         .box .result-text {
@@ -144,8 +143,12 @@
         .btn-draw:hover { background-color: #f57c00; }
         .btn-open-all { background-color: #e91e63; color: white; }
         .btn-open-all:hover { background-color: #c2185b; }
+        .btn-next-round { background-color: #9c27b0; color: white; }
+        .btn-next-round:hover { background-color: #7b1fa2; }
         .btn-shuffle { background-color: #00acc1; color: white; }
         .btn-shuffle:hover { background-color: #00838f; }
+        .btn-reset-all { background-color: #607d8b; color: white; }
+        .btn-reset-all:hover { background-color: #455a64; }
         .btn-clear { background-color: #f44336; color: white; padding: 4px 10px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; }
         .btn-clear:hover { background-color: #d32f2f; }
 
@@ -240,7 +243,9 @@
         <div class="controls-group">
             <button class="btn btn-draw" onclick="randomDraw()">🎲 隨機抽一個</button>
             <button class="btn btn-open-all" onclick="openAllBoxes()">🎉 一次開全部</button>
+            <button class="btn btn-next-round" onclick="nextRound()">✂️ 下一輪 (排除中獎者)</button>
             <button class="btn btn-shuffle" onclick="applySettings()">🔄 重新洗牌</button>
+            <button class="btn btn-reset-all" onclick="resetToDefault()">🗑️ 全部重新</button>
         </div>
     </div>
 
@@ -282,84 +287,7 @@
                     <label style="margin: 0;">抽籤名單 (每行一個)</label>
                     <button class="btn-clear" onclick="clearList()">🗑️ 清除名單</button>
                 </div>
-                <textarea id="setting-list">鄭國斌
-杜瑾玲
-王慈慧
-吳慧貞
-楊瑋雯
-劉慧君
-陳冠蓉
-吳淑敏
-何靜茹
-陳宜彣
-吳耘宬
-楊蒔蓓
-周鈺婷
-彭程英
-詹靜芸
-賴怡青
-宋彩瑛
-林怡真
-邱琳雅
-許振明
-李蕙菁
-陳柏仁
-吳惠娟
-林玟綺
-許政欽
-尤晨筠
-許惠淨
-吳佳俞
-洪瑄
-許絜雯
-尤子瑜
-張藝潔
-盧信如
-陳艷如
-楊芳欣
-徐鈴雅
-林廷蔚
-鄭慧嫻
-李季穎
-蔡博仁
-戴燕玲
-李緯信
-王欣怡
-林雅萍
-鄭郁潔
-林欣儀
-鍾宜廷
-周淑慧
-劉豐毅
-王郁雅
-蔡旻珊
-周沛怡
-楊明山
-劉慧君
-宋彩瑛
-陳宜彣
-邱琳雅
-陳柏仁
-楊明山
-周淑慧
-孫維敏
-林皓瑩
-林淑英
-邱玉珠
-吳宜蓁
-柯雅庭
-呂文仟
-歐垂勳
-林燦燊
-陳佳妤
-陳南熙
-譚婉盈
-姜惠馨
-陳苓瑄
-鄭茵蓮
-周文惠
-魏郁芬
-陳欣妤</textarea>
+                <textarea id="setting-list"></textarea>
             </div>
             <div class="form-group checkbox-group">
                 <input type="checkbox" id="setting-quick"> 
@@ -388,6 +316,9 @@
     </div>
 
     <script>
+        // 預設的大名單 (供恢復預設使用)
+        const DEFAULT_LIST = `鄭國斌\n杜瑾玲\n王慈慧\n吳慧貞\n楊瑋雯\n劉慧君\n陳冠蓉\n吳淑敏\n何靜茹\n陳宜彣\n吳耘宬\n楊蒔蓓\n周鈺婷\n彭程英\n詹靜芸\n賴怡青\n宋彩瑛\n林怡真\n邱琳雅\n許振明\n李蕙菁\n陳柏仁\n吳惠娟\n林玟綺\n許政欽\n尤晨筠\n許惠淨\n吳佳俞\n洪瑄\n許絜雯\n尤子瑜\n張藝潔\n盧信如\n陳艷如\n楊芳欣\n徐鈴雅\n林廷蔚\n鄭慧嫻\n李季穎\n蔡博仁\n戴燕玲\n李緯信\n王欣怡\n林雅萍\n鄭郁潔\n林欣儀\n鍾宜廷\n周淑慧\n劉豐毅\n王郁雅\n蔡旻珊\n周沛怡\n楊明山\n劉慧君\n宋彩瑛\n陳宜彣\n邱琳雅\n陳柏仁\n楊明山\n周淑慧\n孫維敏\n林皓瑩\n林淑英\n邱玉珠\n吳宜蓁\n柯雅庭\n呂文仟\n歐垂勳\n林燦燊\n陳佳妤\n陳南熙\n譚婉盈\n姜惠馨\n陳苓瑄\n鄭茵蓮\n周文惠\n魏郁芬\n陳欣妤`;
+
         // 全局變數
         let items = [];         
         let shuffledItems = []; 
@@ -400,6 +331,58 @@
                 document.getElementById('setting-list').value = '';
                 document.getElementById('setting-list').focus();
             }
+        }
+
+        // 恢復預設全部重新功能
+        function resetToDefault() {
+            if (confirm('確定要捨棄目前的設定與紀錄，恢復全部 77 人的大名單並重新開始嗎？')) {
+                document.getElementById('setting-list').value = DEFAULT_LIST;
+                document.getElementById('setting-box-count').value = 10;
+                applySettings();
+                alert('✅ 已恢復預設名單，隨時可以開始抽籤！');
+            }
+        }
+
+        // 進入下一輪並移除已中獎者
+        function nextRound() {
+            if (isDrawing) return;
+
+            // 找出畫面上已經打開的中獎者
+            let drawnNames = [];
+            boxStatus.forEach((isOpen, index) => {
+                if (isOpen) drawnNames.push(shuffledItems[index]);
+            });
+
+            if (drawnNames.length === 0) {
+                alert('目前畫面上還沒有任何人中獎喔！請先抽籤後再進入下一輪。');
+                return;
+            }
+
+            if (!confirm(`確定要將這 ${drawnNames.length} 位中獎者從名單移除，並開始下一輪抽籤嗎？\n(移除後他們就不會再被抽到了)`)) return;
+
+            // 讀取目前的 textarea 名單
+            let currentListText = document.getElementById('setting-list').value;
+            let currentList = currentListText.split('\n').map(item => item.trim()).filter(item => item !== '');
+
+            // 將中獎者從目前名單中刪除
+            drawnNames.forEach(drawnName => {
+                const idx = currentList.indexOf(drawnName);
+                if (idx > -1) {
+                    currentList.splice(idx, 1);
+                }
+            });
+
+            // 更新到 textarea 裡面
+            document.getElementById('setting-list').value = currentList.join('\n');
+            
+            // 自動幫老師檢查剩下的名單數量，若小於預設盒子數，則自動調降盒子數
+            let boxCountInput = parseInt(document.getElementById('setting-box-count').value);
+            if (boxCountInput > currentList.length) {
+                document.getElementById('setting-box-count').value = currentList.length;
+            }
+
+            alert('✅ 已移除中獎者！系統正在為您重新洗牌開始下一輪...');
+            applySettings();
         }
 
         // 初始化與套用設定
@@ -447,7 +430,6 @@
 
             shuffledItems.forEach((item, index) => {
                 const box = document.createElement('div');
-                // 判斷是否為禮卷主題，若是則加入 theme-ticket class 來套用濾鏡
                 let baseClassName = 'box';
                 if (themeIcon === '🎫') {
                     baseClassName += ' theme-ticket';
@@ -493,7 +475,7 @@
             });
 
             if (availableIndices.length === 0) {
-                alert('全部都抽完囉！請點擊「重新洗牌」。');
+                alert('全部都抽完囉！請點擊「下一輪」或「重新洗牌」。');
                 return;
             }
 
@@ -606,8 +588,9 @@
             }
         }
 
-        // 網頁載入時初始化
+        // 網頁載入時初始化，先帶入預設名單
         window.onload = () => {
+            document.getElementById('setting-list').value = DEFAULT_LIST;
             applySettings();
         };
     </script>
