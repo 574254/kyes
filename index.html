@@ -134,6 +134,8 @@
         .btn-open-all:hover { background-color: #c2185b; }
         .btn-shuffle { background-color: #00acc1; color: white; }
         .btn-shuffle:hover { background-color: #00838f; }
+        .btn-clear { background-color: #f44336; color: white; padding: 4px 10px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-clear:hover { background-color: #d32f2f; }
 
         /* 右側設定與紀錄面板 */
         .sidebar {
@@ -157,7 +159,7 @@
         .form-group input[type="text"], .form-group input[type="number"], .form-group textarea, .form-group select {
             width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
         }
-        .form-group textarea { height: 120px; resize: none; }
+        .form-group textarea { height: 180px; resize: vertical; }
         .checkbox-group { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #555; }
         
         /* 歷史紀錄清單 */
@@ -239,7 +241,6 @@
         <div class="sidebar-content">
             <div class="form-group">
                 <label>活動標題</label>
-                <!-- 預設標題改為 "(活動名稱)" -->
                 <input type="text" id="setting-title" value="(活動名稱)">
             </div>
             <div class="form-group">
@@ -259,17 +260,93 @@
                 <label style="color: #2e7d32;">福袋 / 禮物盒數量 (選填)</label>
                 <input type="number" id="setting-box-count" placeholder="預設與名單總數相同" min="1">
                 <small style="color: #555; display: block; margin-top: 5px;">
-                    情境說明：如果名單有 50 人，這裡輸入 30，畫面上只會出現 30 個盒子，系統會自動從 50 人中抽出 30 個贏家。
+                    情境說明：如果名單有 77 人，這裡輸入 30，畫面上只會出現 30 個盒子，系統會自動抽出 30 個贏家。
                 </small>
             </div>
 
             <div class="form-group">
-                <label>抽籤名單 (每行一個)</label>
-                <textarea id="setting-list">1號同學
-2號同學
-3號同學
-4號同學
-5號同學</textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin: 0;">抽籤名單 (每行一個)</label>
+                    <button class="btn-clear" onclick="clearList()">🗑️ 清除名單</button>
+                </div>
+                <textarea id="setting-list">鄭國斌
+杜瑾玲
+王慈慧
+吳慧貞
+楊瑋雯
+劉慧君
+陳冠蓉
+吳淑敏
+何靜茹
+陳宜彣
+吳耘宬
+楊蒔蓓
+周鈺婷
+彭程英
+詹靜芸
+賴怡青
+宋彩瑛
+林怡真
+邱琳雅
+許振明
+李蕙菁
+陳柏仁
+吳惠娟
+林玟綺
+許政欽
+尤晨筠
+許惠淨
+吳佳俞
+洪瑄
+許絜雯
+尤子瑜
+張藝潔
+盧信如
+陳艷如
+楊芳欣
+徐鈴雅
+林廷蔚
+鄭慧嫻
+李季穎
+蔡博仁
+戴燕玲
+李緯信
+王欣怡
+林雅萍
+鄭郁潔
+林欣儀
+鍾宜廷
+周淑慧
+劉豐毅
+王郁雅
+蔡旻珊
+周沛怡
+楊明山
+劉慧君
+宋彩瑛
+陳宜彣
+邱琳雅
+陳柏仁
+楊明山
+周淑慧
+孫維敏
+林皓瑩
+林淑英
+邱玉珠
+吳宜蓁
+柯雅庭
+呂文仟
+歐垂勳
+林燦燊
+陳佳妤
+陳南熙
+譚婉盈
+姜惠馨
+陳苓瑄
+鄭茵蓮
+周文惠
+魏郁芬
+陳欣妤</textarea>
             </div>
             <div class="form-group checkbox-group">
                 <input type="checkbox" id="setting-quick"> 
@@ -304,6 +381,14 @@
         let boxStatus = [];     // 記錄盒子是否被打開 (true/false)
         let isDrawing = false;  // 防止重複點擊
 
+        // 清除名單功能
+        function clearList() {
+            if (confirm('確定要清空目前的抽籤名單嗎？')) {
+                document.getElementById('setting-list').value = '';
+                document.getElementById('setting-list').focus();
+            }
+        }
+
         // 初始化與套用設定
         function applySettings() {
             // 更新標題
@@ -316,7 +401,7 @@
             items = listText.split('\n').map(item => item.trim()).filter(item => item !== '');
             
             if (items.length === 0) {
-                alert('名單不能為空喔！');
+                alert('名單不能為空喔！請貼上名單後再重新洗牌。');
                 return;
             }
 
@@ -326,7 +411,7 @@
 
             if (!isNaN(boxCountInput) && boxCountInput > 0) {
                 if (boxCountInput > items.length) {
-                    alert(`提醒：您設定的盒子數量 (${boxCountInput}) 超過名單總人數 (${items.length})。\n已自動幫您調整為名單的總人數。`);
+                    alert(`提醒：您設定的數量 (${boxCountInput}) 超過名單總數 (${items.length})。\n已自動幫您調整為名單的總人數。`);
                     finalBoxCount = items.length;
                     document.getElementById('setting-box-count').value = finalBoxCount;
                 } else {
