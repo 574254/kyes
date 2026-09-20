@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神秘禮物盒抽籤系統</title>
+    <style>
+        /* 全局變數與基礎設定 */
+        :root {
+            --primary-color: #00acc1;
+            --bg-color: #e0f7fa;
+            --panel-bg: #ffffff;
+            --text-color: #333333;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; background-color: var(--bg-color); color: var(--text-color); overflow-x: hidden; }
+
+        /* 頂部導覽列 */
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        header h1 { margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; }
+        .icon-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.4); }
+
+        /* 主網格區塊 */
+        .container {
+            padding: 30px;
+            padding-bottom: 120px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 20px;
+        }
+        .box {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            height: 130px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .box:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .box.opened {
+            background-color: #ffd54f;
+            cursor: default;
+            transform: none;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .box .result-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            padding: 10px;
+            word-break: break-all;
+        }
+        .box .number-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #eee;
+            color: #666;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        /* 底部控制列 */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 40;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .lock-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .lock-container.unlocked { color: #2e7d32; background: #e8f5e9; }
+        .lock-container input { width: 20px; height: 20px; cursor: pointer; }
+        .controls-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn {
+            border: none; padding: 12px 20px; border-radius: 8px;
+            font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .btn-draw { background-color: #ff9800; color: white; }
+        .btn-draw:hover { background-color: #f57c00; }
+        .btn-open-all { background-color: #e91e63; color: white; }
+        .btn-open-all:hover { background-color: #c2185b; }
+        .btn-shuffle { background-color: #00acc1; color: white; }
+        .btn-shuffle:hover { background-color: #00838f; }
+
+        /* 右側設定與紀錄面板 */
+        .sidebar {
+            position: fixed; top: 0; right: -400px;
+            width: 380px; height: 100vh;
+            background: white;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            z-index: 60;
+            display: flex; flex-direction: column;
+        }
+        .sidebar.open { right: 0; }
+        .sidebar-header {
+            padding: 20px; background: var(--primary-color); color: white;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .close-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .sidebar-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #555; }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group textarea, .form-group select {
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
+        }
+        .form-group textarea { height: 120px; resize: none; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #555; }
+        
+        /* 歷史紀錄清單 */
+        #history-list { list-style: none; padding: 0; margin: 0; }
+        #history-list li {
+            padding: 10px; background: #f9f9f9; border-left: 4px solid var(--primary-color);
+            margin-bottom: 8px; border-radius: 4px; font-weight: 500;
+        }
+
+        /* 震動動畫 */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-3px, 0px) rotate(3deg); }
+            40% { transform: translate(1px, -1px) rotate(-3deg); }
+            60% { transform: translate(-3px, 1px) rotate(3deg); }
+            80% { transform: translate(-1px, -1px) rotate(-3deg); }
+            100% { transform: translate(1px, -2px) rotate(0deg); }
+        }
+        .box.shake .emoji { animation: shake 0.4s infinite; }
+
+        /* 結果跳出遮罩 */
+        #result-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        .result-card {
+            background: white; padding: 40px 60px; border-radius: 20px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .result-card h2 { color: #f44336; margin: 0 0 15px 0; font-size: 28px; }
+        #big-result-text { font-size: 48px; font-weight: bold; color: #333; margin-bottom: 30px; }
+        .result-card button {
+            background: var(--primary-color); color: white; border: none; padding: 12px 30px;
+            font-size: 18px; border-radius: 30px; cursor: pointer; font-weight: bold;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.6); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 頂部標題 -->
+    <header>
+        <h1 id="display-title">🎁 神秘禮物盒</h1>
+        <button class="icon-btn" onclick="toggleSidebar()">⚙️ 設定與紀錄</button>
+    </header>
+
+    <!-- 主網格 -->
+    <div class="container">
+        <div class="grid" id="grid">
+            <!-- JavaScript 動態生成盒子 -->
+        </div>
+    </div>
+
+    <!-- 底部控制列 -->
+    <div class="bottom-bar">
+        <label class="lock-container" id="lock-label">
+            <input type="checkbox" id="unlock-toggle" onchange="updateLockStatus()">
+            <span id="lock-text">🔒 鎖定中 (防誤觸)</span>
+        </label>
+        
+        <div class="controls-group">
+            <button class="btn btn-draw" onclick="randomDraw()">🎲 隨機抽一個</button>
+            <button class="btn btn-open-all" onclick="openAllBoxes()">🎉 一次開全部</button>
+            <button class="btn btn-shuffle" onclick="applySettings()">🔄 重新洗牌</button>
+        </div>
+    </div>
+
+    <!-- 側邊設定面板 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 style="margin:0;">⚙️ 系統設定</h3>
+            <button class="close-btn" onclick="toggleSidebar()">✖</button>
+        </div>
+        <div class="sidebar-content">
+            <div class="form-group">
+                <label>活動標題</label>
+                <!-- 預設標題改為 "(活動名稱)" -->
+                <input type="text" id="setting-title" value="(活動名稱)">
+            </div>
+            <div class="form-group">
+                <label>畫面風格 (圖案)</label>
+                <select id="setting-theme">
+                    <option value="🎁">🎁 禮物盒 (派對)</option>
+                    <option value="🧧">🧧 紅包</option>
+                    <option value="📖">📖 書</option>
+                    <option value="👽">👽 星空探險 (外星人)</option>
+                    <option value="🌟">🌟 深海尋寶 (海星)</option>
+                    <option value="💰">💰 新年福袋</option>
+                    <option value="❓">❓ 神秘問號</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="background: #f1f8e9; padding: 15px; border-radius: 8px;">
+                <label style="color: #2e7d32;">福袋 / 禮物盒數量 (選填)</label>
+                <input type="number" id="setting-box-count" placeholder="預設與名單總數相同" min="1">
+                <small style="color: #555; display: block; margin-top: 5px;">
+                    情境說明：如果名單有 50 人，這裡輸入 30，畫面上只會出現 30 個盒子，系統會自動從 50 人中抽出 30 個贏家。
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label>抽籤名單 (每行一個)</label>
+                <textarea id="setting-list">1號同學
+2號同學
+3號同學
+4號同學
+5號同學</textarea>
+            </div>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="setting-quick"> 
+                <label for="setting-quick" style="margin:0;">⚡ 快速開箱模式 (略過震動動畫)</label>
+            </div>
+            <button class="btn btn-shuffle" style="width:100%; margin-bottom: 20px;" onclick="applySettings()">套用設定並重新洗牌</button>
+            
+            <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
+            
+            <div class="form-group">
+                <label>📜 抽籤紀錄</label>
+                <ul id="history-list">
+                    <!-- 紀錄列表 -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 開獎結果遮罩 (單抽使用) -->
+    <div id="result-overlay">
+        <div class="result-card">
+            <h2>🎉 抽中囉 🎉</h2>
+            <div id="big-result-text">獎項</div>
+            <button onclick="closeResult()">確定</button>
+        </div>
+    </div>
+
+    <script>
+        // 全局變數
+        let items = [];         // 原始名單
+        let shuffledItems = []; // 洗牌後的名單，對應到每一個盒子
+        let boxStatus = [];     // 記錄盒子是否被打開 (true/false)
+        let isDrawing = false;  // 防止重複點擊
+
+        // 初始化與套用設定
+        function applySettings() {
+            // 更新標題
+            const title = document.getElementById('setting-title').value;
+            // 這裡將選擇的 emoji 圖案與標題文字組合在一起顯示在最上方
+            document.getElementById('display-title').innerText = document.getElementById('setting-theme').value + " " + title;
+            
+            // 讀取並過濾名單
+            const listText = document.getElementById('setting-list').value;
+            items = listText.split('\n').map(item => item.trim()).filter(item => item !== '');
+            
+            if (items.length === 0) {
+                alert('名單不能為空喔！');
+                return;
+            }
+
+            // 處理「盒子數量」邏輯
+            let boxCountInput = parseInt(document.getElementById('setting-box-count').value);
+            let finalBoxCount = items.length; // 預設為名單人數
+
+            if (!isNaN(boxCountInput) && boxCountInput > 0) {
+                if (boxCountInput > items.length) {
+                    alert(`提醒：您設定的盒子數量 (${boxCountInput}) 超過名單總人數 (${items.length})。\n已自動幫您調整為名單的總人數。`);
+                    finalBoxCount = items.length;
+                    document.getElementById('setting-box-count').value = finalBoxCount;
+                } else {
+                    finalBoxCount = boxCountInput;
+                }
+            }
+
+            // 隨機打亂所有名單，然後依據盒子數量「截取」前 N 個名單
+            let tempShuffled = [...items].sort(() => Math.random() - 0.5);
+            shuffledItems = tempShuffled.slice(0, finalBoxCount);
+            
+            // 初始化盒子狀態 (全部設為未開 false)
+            boxStatus = new Array(finalBoxCount).fill(false);
+            
+            // 清空歷史紀錄
+            document.getElementById('history-list').innerHTML = '';
+            
+            renderGrid();
+            toggleSidebar(false); // 關閉側邊欄
+        }
+
+        // 渲染網格畫面
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            const themeIcon = document.getElementById('setting-theme').value;
+            grid.innerHTML = '';
+
+            shuffledItems.forEach((item, index) => {
+                const box = document.createElement('div');
+                box.className = 'box' + (boxStatus[index] ? ' opened' : '');
+                box.id = `box-${index}`;
+                
+                if (boxStatus[index]) {
+                    // 已開過的顯示結果
+                    box.innerHTML = `
+                        <div class="number-badge">${index + 1}</div>
+                        <div class="result-text">${item}</div>
+                    `;
+                } else {
+                    // 未開過的顯示圖案
+                    box.innerHTML = `
+                        <div class="number-badge">${index + 1}</div>
+                        <div class="emoji">${themeIcon}</div>
+                    `;
+                    box.onclick = () => handleBoxClick(index);
+                }
+                
+                grid.appendChild(box);
+            });
+        }
+
+        // 點擊特定盒子 (單抽)
+        function handleBoxClick(index) {
+            if (isDrawing) return;
+            if (!checkUnlock()) return;
+            if (boxStatus[index]) return;
+
+            processDraw(index);
+        }
+
+        // 隨機抽一個 (找還沒開過的隨機挑一個)
+        function randomDraw() {
+            if (isDrawing) return;
+            if (!checkUnlock()) return;
+
+            const availableIndices = [];
+            boxStatus.forEach((isOpen, index) => {
+                if (!isOpen) availableIndices.push(index);
+            });
+
+            if (availableIndices.length === 0) {
+                alert('全部都抽完囉！請點擊「重新洗牌」。');
+                return;
+            }
+
+            const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+            processDraw(randomIndex);
+        }
+
+        // 一次開全部 (全開)
+        function openAllBoxes() {
+            if (isDrawing) return;
+            if (!checkUnlock()) return;
+
+            // 檢查是否還有沒開的盒子
+            let hasUnopened = boxStatus.includes(false);
+            if (!hasUnopened) {
+                alert('所有盒子都已經打開囉！');
+                return;
+            }
+
+            if (!confirm('確定要一次打開畫面上所有剩下的盒子嗎？')) return;
+
+            // 將所有未開的盒子標記為已開，並寫入歷史紀錄
+            const historyList = document.getElementById('history-list');
+            
+            boxStatus.forEach((isOpen, index) => {
+                if (!isOpen) {
+                    boxStatus[index] = true;
+                    // 加入歷史紀錄 (最新開的放在最上面)
+                    const li = document.createElement('li');
+                    li.innerText = `第 ${index + 1} 盒：${shuffledItems[index]}`;
+                    historyList.prepend(li);
+                }
+            });
+
+            // 重新渲染畫面顯示全部結果
+            renderGrid();
+            
+            // 給個小提示
+            setTimeout(() => {
+                alert('🎊 已經全部開獎完畢！您可以在右側設定面板中查看完整紀錄。');
+            }, 300);
+        }
+
+        // 執行單抽動畫與邏輯
+        function processDraw(index) {
+            isDrawing = true;
+            const isQuickMode = document.getElementById('setting-quick').checked;
+            const box = document.getElementById(`box-${index}`);
+
+            if (!isQuickMode) {
+                // 震動動畫
+                box.classList.add('shake');
+                setTimeout(() => {
+                    box.classList.remove('shake');
+                    revealResult(index);
+                }, 1200);
+            } else {
+                // 快速開箱
+                revealResult(index);
+            }
+        }
+
+        // 單抽開獎並顯示結果
+        function revealResult(index) {
+            boxStatus[index] = true;
+            const resultText = shuffledItems[index];
+
+            // 加入歷史紀錄
+            const historyList = document.getElementById('history-list');
+            const li = document.createElement('li');
+            li.innerText = `第 ${index + 1} 盒：${resultText}`;
+            historyList.prepend(li); 
+
+            // 顯示大螢幕結果
+            document.getElementById('big-result-text').innerText = resultText;
+            document.getElementById('result-overlay').style.display = 'flex';
+
+            renderGrid();
+        }
+
+        // 關閉單抽開獎畫面
+        function closeResult() {
+            document.getElementById('result-overlay').style.display = 'none';
+            isDrawing = false;
+        }
+
+        // 檢查防誤觸鎖定狀態
+        function checkUnlock() {
+            const isUnlocked = document.getElementById('unlock-toggle').checked;
+            if (!isUnlocked) {
+                alert('🔒 老師尚未解鎖！\n請先點擊左下角的「鎖定中」按鈕解鎖才能開始抽籤喔！');
+                return false;
+            }
+            return true;
+        }
+
+        // 更新左下角鎖定 UI
+        function updateLockStatus() {
+            const isUnlocked = document.getElementById('unlock-toggle').checked;
+            const label = document.getElementById('lock-label');
+            const text = document.getElementById('lock-text');
+            
+            if (isUnlocked) {
+                label.classList.add('unlocked');
+                text.innerText = '✅ 已解鎖 (可抽籤)';
+            } else {
+                label.classList.remove('unlocked');
+                text.innerText = '🔒 鎖定中 (防誤觸)';
+            }
+        }
+
+        // 側邊欄開關控制
+        function toggleSidebar(forceState) {
+            const sidebar = document.getElementById('sidebar');
+            if (forceState === false) {
+                sidebar.classList.remove('open');
+            } else {
+                sidebar.classList.toggle('open');
+            }
+        }
+
+        // 網頁載入時初始化
+        window.onload = () => {
+            applySettings();
+        };
+    </script>
+
+</body>
+</html>
