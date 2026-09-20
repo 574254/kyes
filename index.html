@@ -5,16 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>神秘禮物盒抽籤系統</title>
     <style>
+        /* 全局變數與基礎設定 */
         :root {
             --primary-color: #00acc1;
             --bg-color: #e0f7fa;
-            --box-color: #ffca28; /* 預設黃色盒子 */
-            --box-opened-color: #ffd54f; /* 開啟後的黃色 */
+            --panel-bg: #ffca28; /* 預設黃色底，吸睛亮眼 */
             --text-color: #333333;
         }
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { margin: 0; background-color: var(--bg-color); color: var(--text-color); overflow-x: hidden; }
 
+        /* 頂部導覽列 */
         header {
             background-color: var(--primary-color);
             color: white;
@@ -27,75 +28,85 @@
             top: 0;
             z-index: 50;
         }
-        header h1 { margin: 0; font-size: 26px; font-weight: bold; letter-spacing: 2px; }
+        header h1 { margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; }
         .icon-btn {
             background: rgba(255,255,255,0.2);
             border: none;
             color: white;
-            padding: 10px 20px;
+            padding: 10px 15px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             transition: background 0.3s;
         }
         .icon-btn:hover { background: rgba(255,255,255,0.4); }
 
+        /* 主網格區塊 */
         .container {
-            padding: 20px;
+            padding: 30px;
             padding-bottom: 120px;
-            max-width: 98%; /* 讓大螢幕可以充分運用寬度 */
+            max-width: 98%; /* 放寬最大寬度以容納一排10個 */
             margin: 0 auto;
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(10, 1fr); /* 強制一排 10 個 */
-            gap: 15px; /* 盒子之間的間距 */
+            grid-template-columns: repeat(10, 1fr); /* 強制設定為一排 10 個 */
+            gap: 12px; 
         }
         .box {
-            background-color: var(--box-color);
+            background-color: var(--panel-bg);
             border-radius: 12px;
-            min-height: 130px; /* 確保盒子夠高 */
+            height: 120px; 
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 50px; /* 未開箱前的 Icon 大小 */
+            font-size: 45px; /* 圖案大小 */
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             transition: transform 0.2s, box-shadow 0.2s;
             position: relative;
-            padding: 10px;
         }
+        
+        /* 針對禮卷圖示套用濾鏡，讓紫色更顯眼，並放大圖案 */
+        .box.theme-ticket .emoji {
+             filter: hue-rotate(260deg) saturate(300%) brightness(1.1); /* 調整濾鏡以獲得更飽和的紫色 */
+             display: inline-block; /* 必須設為 inline-block 或 block 才能使用 transform */
+             transform: scale(1.4); /* 放大圖案 1.4 倍 */
+        }
+        
         .box:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
         .box.opened {
-            background-color: var(--box-opened-color);
+            background-color: var(--panel-bg) !important; /* 打開後維持黃色底 */
             cursor: default;
             transform: none;
             box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            /* 移除邊框 */
         }
-        
-        /* 💡 放大字體：專門為了大禮堂投影設計 */
+
         .box .result-text {
-            font-size: 36px; /* 超大字體 */
-            font-weight: 900; /* 極粗體 */
+            font-size: 36px; /* 巨大化字體，適合大禮堂投影 */
+            font-weight: 900;
             color: #111;
             text-align: center;
-            word-break: break-word; /* 防止長名字破版 */
-            line-height: 1.2;
+            padding: 5px;
+            line-height: 1.1;
+            word-break: break-all;
         }
         .box .number-badge {
             position: absolute;
-            top: 6px;
+            top: 8px;
             left: 8px;
-            background: rgba(255, 255, 255, 0.8);
-            color: #444;
+            background: #fff; /* 白底黑字數字標籤 */
+            color: #333;
             font-size: 14px;
-            padding: 3px 8px;
-            border-radius: 12px;
+            padding: 4px 10px;
+            border-radius: 15px;
             font-weight: bold;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 加點陰影增加立體感 */
         }
 
+        /* 底部控制列 */
         .bottom-bar {
             position: fixed;
             bottom: 0; left: 0; width: 100%;
@@ -113,21 +124,21 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #d32f2f;
             background: #ffebee;
-            padding: 12px 25px;
+            padding: 10px 20px;
             border-radius: 30px;
             cursor: pointer;
             user-select: none;
         }
         .lock-container.unlocked { color: #2e7d32; background: #e8f5e9; }
-        .lock-container input { width: 24px; height: 24px; cursor: pointer; }
-        .controls-group { display: flex; gap: 15px; flex-wrap: wrap; }
+        .lock-container input { width: 20px; height: 20px; cursor: pointer; }
+        .controls-group { display: flex; gap: 10px; flex-wrap: wrap; }
         .btn {
-            border: none; padding: 15px 25px; border-radius: 8px;
-            font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s;
+            border: none; padding: 12px 20px; border-radius: 8px;
+            font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;
         }
         .btn-draw { background-color: #ff9800; color: white; }
         .btn-draw:hover { background-color: #f57c00; }
@@ -135,18 +146,13 @@
         .btn-open-all:hover { background-color: #c2185b; }
         .btn-shuffle { background-color: #00acc1; color: white; }
         .btn-shuffle:hover { background-color: #00838f; }
-        
-        .btn-clear { 
-            background-color: #f44336; color: white; 
-            padding: 6px 12px; font-size: 14px; 
-            border-radius: 6px; border: none; 
-            cursor: pointer; transition: 0.2s; 
-        }
+        .btn-clear { background-color: #f44336; color: white; padding: 4px 10px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; }
         .btn-clear:hover { background-color: #d32f2f; }
 
+        /* 右側設定與紀錄面板 */
         .sidebar {
-            position: fixed; top: 0; right: -420px;
-            width: 400px; height: 100vh;
+            position: fixed; top: 0; right: -400px;
+            width: 380px; height: 100vh;
             background: white;
             box-shadow: -5px 0 15px rgba(0,0,0,0.1);
             transition: right 0.3s ease;
@@ -158,22 +164,24 @@
             padding: 20px; background: var(--primary-color); color: white;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .close-btn { background: none; border: none; color: white; font-size: 28px; cursor: pointer; }
-        .sidebar-content { padding: 25px; overflow-y: auto; flex-grow: 1; }
-        .form-group { margin-bottom: 25px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 10px; color: #555; font-size: 16px;}
+        .close-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .sidebar-content { padding: 20px; overflow-y: auto; flex-grow: 1; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #555; }
         .form-group input[type="text"], .form-group input[type="number"], .form-group textarea, .form-group select {
-            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px;
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
         }
-        .form-group textarea { height: 200px; resize: vertical; }
-        .checkbox-group { display: flex; align-items: center; gap: 10px; font-size: 16px; color: #555; font-weight: bold;}
+        .form-group textarea { height: 180px; resize: vertical; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #555; }
         
+        /* 歷史紀錄清單 */
         #history-list { list-style: none; padding: 0; margin: 0; }
         #history-list li {
-            padding: 12px; background: #f9f9f9; border-left: 5px solid var(--primary-color);
-            margin-bottom: 10px; border-radius: 4px; font-weight: bold; font-size: 16px;
+            padding: 10px; background: #f9f9f9; border-left: 4px solid var(--primary-color);
+            margin-bottom: 8px; border-radius: 4px; font-weight: 500;
         }
 
+        /* 震動動畫 */
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             20% { transform: translate(-3px, 0px) rotate(3deg); }
@@ -184,25 +192,22 @@
         }
         .box.shake .emoji { animation: shake 0.4s infinite; }
 
+        /* 結果跳出遮罩 */
         #result-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
             display: none; justify-content: center; align-items: center; z-index: 100;
         }
         .result-card {
-            background: white; padding: 60px 80px; border-radius: 20px;
-            text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            background: white; padding: 50px 80px; border-radius: 20px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-width: 90%;
         }
-        .result-card h2 { color: #f44336; margin: 0 0 20px 0; font-size: 36px; }
-        
-        /* 💡 放大單抽結果的字體 */
-        #big-result-text { font-size: 80px; font-weight: 900; color: #111; margin-bottom: 40px; }
-        
+        .result-card h2 { color: #f44336; margin: 0 0 15px 0; font-size: 36px; }
+        #big-result-text { font-size: 80px; font-weight: 900; color: #333; margin-bottom: 30px; line-height: 1.2; }
         .result-card button {
             background: var(--primary-color); color: white; border: none; padding: 15px 40px;
-            font-size: 24px; border-radius: 30px; cursor: pointer; font-weight: bold;
+            font-size: 22px; border-radius: 30px; cursor: pointer; font-weight: bold;
         }
         @keyframes popIn {
             0% { transform: scale(0.6); opacity: 0; }
@@ -212,17 +217,20 @@
 </head>
 <body>
 
+    <!-- 頂部標題 -->
     <header>
         <h1 id="display-title">🎁 神秘禮物盒</h1>
         <button class="icon-btn" onclick="toggleSidebar()">⚙️ 設定與紀錄</button>
     </header>
 
+    <!-- 主網格 -->
     <div class="container">
         <div class="grid" id="grid">
-            <!-- JavaScript 會在這裡動態生成一排 10 個的黃色盒子 -->
+            <!-- JavaScript 動態生成盒子 -->
         </div>
     </div>
 
+    <!-- 底部控制列 -->
     <div class="bottom-bar">
         <label class="lock-container" id="lock-label">
             <input type="checkbox" id="unlock-toggle" onchange="updateLockStatus()">
@@ -236,9 +244,10 @@
         </div>
     </div>
 
+    <!-- 側邊設定面板 -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h3 style="margin:0; font-size: 22px;">⚙️ 系統設定</h3>
+            <h3 style="margin:0;">⚙️ 系統設定</h3>
             <button class="close-btn" onclick="toggleSidebar()">✖</button>
         </div>
         <div class="sidebar-content">
@@ -251,6 +260,7 @@
                 <select id="setting-theme">
                     <option value="🎁">🎁 禮物盒 (派對)</option>
                     <option value="🧧">🧧 紅包</option>
+                    <option value="🎫">🎫 禮卷</option>
                     <option value="📖">📖 書</option>
                     <option value="👽">👽 星空探險 (外星人)</option>
                     <option value="🌟">🌟 深海尋寶 (海星)</option>
@@ -260,10 +270,10 @@
             </div>
             
             <div class="form-group" style="background: #f1f8e9; padding: 15px; border-radius: 8px;">
-                <label style="color: #2e7d32;">禮物盒數量 (預設10個)</label>
+                <label style="color: #2e7d32;">福袋 / 禮物盒數量 (選填)</label>
                 <input type="number" id="setting-box-count" value="10" placeholder="預設與名單總數相同" min="1">
-                <small style="color: #555; display: block; margin-top: 8px; line-height: 1.4;">
-                    系統會自動從下方的名單中，隨機抽出對應數量的贏家分配到盒子裡。
+                <small style="color: #555; display: block; margin-top: 5px;">
+                    情境說明：如果名單有 77 人，這裡輸入 30，畫面上只會出現 30 個盒子，系統會自動抽出 30 個贏家。
                 </small>
             </div>
 
@@ -353,11 +363,11 @@
             </div>
             <div class="form-group checkbox-group">
                 <input type="checkbox" id="setting-quick"> 
-                <label for="setting-quick" style="margin:0; cursor:pointer;">⚡ 快速開箱模式 (略過震動動畫)</label>
+                <label for="setting-quick" style="margin:0;">⚡ 快速開箱模式 (略過震動動畫)</label>
             </div>
-            <button class="btn btn-shuffle" style="width:100%; margin-bottom: 20px; font-size: 20px;" onclick="applySettings()">套用設定並重新洗牌</button>
+            <button class="btn btn-shuffle" style="width:100%; margin-bottom: 20px;" onclick="applySettings()">套用設定並重新洗牌</button>
             
-            <hr style="border:0; border-top:1px solid #ddd; margin: 25px 0;">
+            <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
             
             <div class="form-group">
                 <label>📜 抽籤紀錄</label>
@@ -368,6 +378,7 @@
         </div>
     </div>
 
+    <!-- 開獎結果遮罩 (單抽使用) -->
     <div id="result-overlay">
         <div class="result-card">
             <h2>🎉 抽中囉 🎉</h2>
@@ -377,6 +388,7 @@
     </div>
 
     <script>
+        // 全局變數
         let items = [];         
         let shuffledItems = []; 
         let boxStatus = [];     
@@ -416,9 +428,9 @@
                 }
             }
 
-            // 隨機打亂並截取對應數量的贏家
             let tempShuffled = [...items].sort(() => Math.random() - 0.5);
             shuffledItems = tempShuffled.slice(0, finalBoxCount);
+            
             boxStatus = new Array(finalBoxCount).fill(false);
             
             document.getElementById('history-list').innerHTML = '';
@@ -427,7 +439,7 @@
             toggleSidebar(false); 
         }
 
-        // 渲染黃色網格盒子
+        // 渲染網格畫面
         function renderGrid() {
             const grid = document.getElementById('grid');
             const themeIcon = document.getElementById('setting-theme').value;
@@ -435,17 +447,21 @@
 
             shuffledItems.forEach((item, index) => {
                 const box = document.createElement('div');
-                box.className = 'box' + (boxStatus[index] ? ' opened' : '');
+                // 判斷是否為禮卷主題，若是則加入 theme-ticket class 來套用濾鏡
+                let baseClassName = 'box';
+                if (themeIcon === '🎫') {
+                    baseClassName += ' theme-ticket';
+                }
+                
+                box.className = baseClassName + (boxStatus[index] ? ' opened' : '');
                 box.id = `box-${index}`;
                 
                 if (boxStatus[index]) {
-                    // 已開過的顯示巨大文字結果
                     box.innerHTML = `
                         <div class="number-badge">${index + 1}</div>
                         <div class="result-text">${item}</div>
                     `;
                 } else {
-                    // 未開過的顯示圖案
                     box.innerHTML = `
                         <div class="number-badge">${index + 1}</div>
                         <div class="emoji">${themeIcon}</div>
@@ -457,13 +473,16 @@
             });
         }
 
+        // 點擊特定盒子 (單抽)
         function handleBoxClick(index) {
             if (isDrawing) return;
             if (!checkUnlock()) return;
             if (boxStatus[index]) return;
+
             processDraw(index);
         }
 
+        // 隨機抽一個
         function randomDraw() {
             if (isDrawing) return;
             if (!checkUnlock()) return;
@@ -482,6 +501,7 @@
             processDraw(randomIndex);
         }
 
+        // 一次開全部
         function openAllBoxes() {
             if (isDrawing) return;
             if (!checkUnlock()) return;
@@ -512,7 +532,7 @@
             }, 300);
         }
 
-        // 執行抽籤動畫與快速開箱模式判定
+        // 執行單抽動畫與邏輯
         function processDraw(index) {
             isDrawing = true;
             const isQuickMode = document.getElementById('setting-quick').checked;
@@ -529,6 +549,7 @@
             }
         }
 
+        // 單抽開獎並顯示結果
         function revealResult(index) {
             boxStatus[index] = true;
             const resultText = shuffledItems[index];
@@ -544,11 +565,13 @@
             renderGrid();
         }
 
+        // 關閉單抽開獎畫面
         function closeResult() {
             document.getElementById('result-overlay').style.display = 'none';
             isDrawing = false;
         }
 
+        // 檢查防誤觸鎖定狀態
         function checkUnlock() {
             const isUnlocked = document.getElementById('unlock-toggle').checked;
             if (!isUnlocked) {
@@ -558,6 +581,7 @@
             return true;
         }
 
+        // 更新左下角鎖定 UI
         function updateLockStatus() {
             const isUnlocked = document.getElementById('unlock-toggle').checked;
             const label = document.getElementById('lock-label');
@@ -572,6 +596,7 @@
             }
         }
 
+        // 側邊欄開關控制
         function toggleSidebar(forceState) {
             const sidebar = document.getElementById('sidebar');
             if (forceState === false) {
@@ -586,5 +611,6 @@
             applySettings();
         };
     </script>
+
 </body>
 </html>
